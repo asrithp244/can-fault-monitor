@@ -8,14 +8,14 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include "can_fault_monitor/fault_types.hpp"
-#include "can_fault_monitor_msgs/msg/can_frame.hpp"
-#include "can_fault_monitor_msgs/msg/can_health_status.hpp"
-#include "can_fault_monitor_msgs/msg/fault_event.hpp"
+#include "can_fault_monitor/msg/can_frame.hpp"
+#include "can_fault_monitor/msg/can_health_status.hpp"
+#include "can_fault_monitor/msg/fault_event.hpp"
 
 using namespace std::chrono_literals;
-using CanFrameMsg      = can_fault_monitor_msgs::msg::CanFrame;
-using CanHealthStatus  = can_fault_monitor_msgs::msg::CanHealthStatus;
-using FaultEvent       = can_fault_monitor_msgs::msg::FaultEvent;
+using CanFrameMsg      = can_fault_monitor::msg::CanFrame;
+using CanHealthStatus  = can_fault_monitor::msg::CanHealthStatus;
+using FaultEvent       = can_fault_monitor::msg::FaultEvent;
 using can_fault_monitor::BusState;
 using can_fault_monitor::FaultType;
 using can_fault_monitor::bus_state_to_string;

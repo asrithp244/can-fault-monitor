@@ -4,12 +4,12 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include "can_fault_monitor/can_socket.hpp"
-#include "can_fault_monitor_msgs/msg/can_frame.hpp"
+#include "can_fault_monitor/msg/can_frame.hpp"
 
 #include <linux/can.h>
 
 using namespace std::chrono_literals;
-using CanFrameMsg = can_fault_monitor_msgs::msg::CanFrame;
+using CanFrameMsg = can_fault_monitor::msg::CanFrame;
 
 class CanSubscriberNode : public rclcpp::Node
 {

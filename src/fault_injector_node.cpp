@@ -8,14 +8,14 @@
 
 #include "can_fault_monitor/can_socket.hpp"
 #include "can_fault_monitor/fault_types.hpp"
-#include "can_fault_monitor_msgs/msg/fault_event.hpp"
-#include "can_fault_monitor_msgs/srv/inject_fault.hpp"
+#include "can_fault_monitor/msg/fault_event.hpp"
+#include "can_fault_monitor/srv/inject_fault.hpp"
 
 #include <linux/can.h>
 
 using namespace std::chrono_literals;
-using InjectFault = can_fault_monitor_msgs::srv::InjectFault;
-using FaultEvent  = can_fault_monitor_msgs::msg::FaultEvent;
+using InjectFault = can_fault_monitor::srv::InjectFault;
+using FaultEvent  = can_fault_monitor::msg::FaultEvent;
 using can_fault_monitor::FaultType;
 using can_fault_monitor::fault_type_from_string;
 using can_fault_monitor::fault_type_to_string;
