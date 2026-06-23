@@ -117,7 +117,10 @@ private:
   {
     struct can_frame frame{};
     frame.can_id  = corruption_target_id_;
-    frame.can_dlc = 9;  // ISO 11898 violation: max DLC is 8
+    frame.can_dlc = 8;
+    // Corruption signature: 0xDE 0xAD 0xBE 0xEF in bytes 0-3.
+    // vcan0 rejects DLC>8 (no hardware error frames), so we use a magic
+    // payload pattern that the subscriber detects as a corrupted frame.
     frame.data[0] = 0xDE; frame.data[1] = 0xAD;
     frame.data[2] = 0xBE; frame.data[3] = 0xEF;
     std::fill(frame.data + 4, frame.data + 8, 0xFF);

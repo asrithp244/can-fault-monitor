@@ -59,11 +59,15 @@ private:
     const uint8_t clamped = std::min(raw.can_dlc, static_cast<uint8_t>(8));
     for (size_t i = 0; i < 8; ++i) msg.data[i] = (i < clamped) ? raw.data[i] : 0;
 
-    // FRAME_CORRUPTION: DLC > 8 is a protocol violation per ISO 11898
-    if (raw.can_dlc > 8) {
+    // FRAME_CORRUPTION: detect by magic payload signature 0xDE AD BE EF
+    // (vcan0 enforces DLC<=8 so we can't use invalid DLC on virtual CAN;
+    //  on physical CAN hardware error frames arrive via CAN_ERR_FLAG instead)
+    if (!msg.is_error_frame && clamped >= 4 &&
+        raw.data[0] == 0xDE && raw.data[1] == 0xAD &&
+        raw.data[2] == 0xBE && raw.data[3] == 0xEF) {
       msg.is_error_frame = true;
       RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 500,
-        "[CAN 0x%03X] Invalid DLC=%u — FRAME_CORRUPTION candidate", msg.can_id, raw.can_dlc);
+        "[CAN 0x%03X] Corruption signature detected — FRAME_CORRUPTION", msg.can_id);
     }
 
     // Sequence counter: detect dropped frames via gaps in data[7]
