@@ -109,6 +109,18 @@ ros2 service call /fault_injector/inject_fault \
 
 **To run on physical hardware:** change `interface: "can0"` in `config/params.yaml`. Zero code changes.
 
+### What actually changes at the physical layer — and why the detection logic survives it
+
+On real CAN hardware, three things change that vcan0 cannot reproduce:
+
+**Timing jitter and clock drift.** vcan0 delivers frames with near-zero latency variance. On a physical 1 Mbit/s bus, a standard 8-byte frame takes ~130 µs, and under load that stretches due to arbitration. This means the NODE_DROPOUT deadline timer (currently 100 ms = 5 missed frames at 50 Hz) needs a wider tolerance on real hardware — approximately 15–20% slack to absorb arbitration delay without false positives. The timer itself doesn't change; the threshold does, and it's exposed in `config/params.yaml` as `dropout_deadline_ms`.
+
+**EMI-induced partial frame corruption.** On physical hardware near motor drive PWM switching, corruption isn't a clean application-layer pattern — it's 1-2 bit flips that the CAN controller's CRC catches and discards silently, incrementing the TEC counter. The subscriber never sees the dropped frame; it sees a gap in the sequence counter instead. This means FRAME_CORRUPTION detection on real hardware should shift weight toward sequence counter gap rate (already implemented in `can_subscriber_node.cpp`) rather than payload signature matching. The sliding window detector remains valid — only the input signal changes.
+
+**Bus arbitration under load.** BUS_FLOOD on vcan0 has no bandwidth ceiling. On a real 1 Mbit/s bus, 2,000 fps is physically impossible for 8-byte frames (~7,700 fps max). The flood threshold (500 fps in `config/params.yaml`) is set well below physical limits and would trigger correctly on real hardware, though the measured rate would reflect actual bus occupancy rather than a software counter.
+
+The detection architecture is correct for both environments. The thresholds need field calibration, which is exactly what `config/params.yaml` is for.
+
 ---
 
 ## Build & run
