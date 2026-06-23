@@ -17,14 +17,14 @@ All three fault modes injected and measured on vcan0 (Ubuntu 22.04, VirtualBox):
 
 ### Bus Health Timeline
 
-![Bus Health Timeline](results/bus_health_timeline.png)
+![Bus Health Timeline](bus_health_timeline.jpeg)
 
 - **Top**: frame rate spikes to ~700 fps during BUS_FLOOD injection, crossing the 500 fps detection threshold
 - **Bottom**: invalid frame ratio spikes to 25% during FRAME_CORRUPTION, crossing the 20% threshold. Both return to 0 on recovery.
 
 ### Detection & Recovery Latency
 
-![Recovery Latency](results/recovery_latency.png)
+![Recovery Latency](recovery_latency.jpeg)
 
 NODE_DROPOUT detection at 115 ms confirms the 5-missed-frame deadline timer (100 ms at 50 Hz + 15 ms eval jitter). Recovery at 1903 ms reflects the exponential backoff sequence (100 → 200 → 400 ms probes before node resumes).
 
