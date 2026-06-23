@@ -1,0 +1,7 @@
+string  fault_type      # "NODE_DROPOUT" | "FRAME_CORRUPTION" | "BUS_FLOOD"
+uint32  target_can_id   # CAN ID to target (0x100 for dropout/corruption, 0x7FF for flood)
+float64 duration_sec    # 0 = arm indefinitely; >0 = auto-cancel after N seconds
+---
+bool    success
+string  message
+float64 injection_timestamp

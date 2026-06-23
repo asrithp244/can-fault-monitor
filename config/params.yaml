@@ -1,0 +1,43 @@
+/**:
+  ros__parameters:
+    # CAN interface. Change to "can0" for physical hardware — zero code changes needed.
+    interface: "vcan0"
+
+can_publisher:
+  ros__parameters:
+    interface: "vcan0"
+    can_id: 256              # 0x100 — simulated actuator node
+    publish_rate: 50.0       # Hz; must match dropout_deadline_ms calculation
+
+can_subscriber:
+  ros__parameters:
+    interface: "vcan0"
+    poll_rate: 200.0         # Hz; 4x publish rate gives headroom for burst detection
+
+fault_injector:
+  ros__parameters:
+    interface: "vcan0"
+    flood_can_id: 2047       # 0x7FF — lowest CAN priority (loses arbitration to all others)
+    flood_rate_hz: 2000.0    # frames/sec; stays below vcan0 scheduler saturation
+    corruption_rate_hz: 20.0 # DLC=9 frames/sec; >20% of 50 Hz nominal → detectable
+    corruption_target_id: 256
+
+can_health_monitor:
+  ros__parameters:
+    # NODE_DROPOUT: deadline timer
+    # At 50 Hz, 5 missed frames = 100 ms. Keeps well below 500 ms safety action timeout.
+    dropout_deadline_ms: 100.0
+
+    # FRAME_CORRUPTION: sliding window
+    # 500 ms window captures a burst; ratio >20% indicates systematic corruption.
+    corruption_window_ms: 500.0
+    corruption_threshold_ratio: 0.20  # 0.0–1.0
+
+    # BUS_FLOOD: per-ID rate in short window
+    # 100 ms window; >500 fps = runaway controller confirmed.
+    # At 1 Mbit/s (physical), max realistic fps ≈ 7700. Threshold set below that.
+    flood_window_ms: 100.0
+    flood_threshold_fps: 500.0
+
+    # Results CSV for post-run analysis
+    metrics_file: "results/metrics.csv"
