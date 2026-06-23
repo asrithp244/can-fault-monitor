@@ -160,6 +160,11 @@ private:
         const double invalid = static_cast<double>(st.invalid_rx_times.size());
         const double ratio   = (total > 0) ? (invalid / total) : 0.0;
         if (ratio > corruption_thresh_) {
+          if (last_published_state_ != BusState::DEGRADED) {
+            RCLCPP_WARN(this->get_logger(),
+              "[CAN 0x%03X] FRAME_CORRUPTION detected. Ratio: %.2f", id, ratio);
+            log_metric(now, "FRAME_CORRUPTION", 0.0, 0.0, 0.0, ratio);
+          }
           bus_state_    = BusState::DEGRADED;
           active_fault_ = FaultType::FRAME_CORRUPTION;
         }
@@ -170,11 +175,11 @@ private:
         prune_window(st.all_rx_times, now, flood_window_);
         const double fps = static_cast<double>(st.all_rx_times.size()) / flood_window_;
         if (fps > flood_thresh_fps_) {
-          if (bus_state_ != BusState::DEGRADED) {
-            const double latency_ms = 0.0;  // detected immediately
+          // Only log on transition to DEGRADED, not every eval tick
+          if (last_published_state_ != BusState::DEGRADED) {
             RCLCPP_WARN(this->get_logger(),
               "[CAN 0x%03X] BUS_FLOOD detected. Rate: %.0f fps", id, fps);
-            log_metric(now, "BUS_FLOOD", latency_ms, 0.0);
+            log_metric(now, "BUS_FLOOD", 0.0, 0.0, fps, 0.0);
           }
           bus_state_    = BusState::DEGRADED;
           active_fault_ = FaultType::BUS_FLOOD;
@@ -223,12 +228,11 @@ private:
   }
 
   void log_metric(double ts, const std::string & fault,
-                  double det_ms, double rec_ms)
+                  double det_ms, double rec_ms,
+                  double fps = 0.0, double ratio = 0.0)
   {
     total_faults_detected_++;
     if (!csv_.is_open()) return;
-    const double fps = 0.0;
-    const double ratio = 0.0;
     csv_ << std::fixed << std::setprecision(3)
          << ts << "," << fault << "," << det_ms << "," << rec_ms
          << "," << fps << "," << ratio << "\n";
