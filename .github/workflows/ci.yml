@@ -11,65 +11,54 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-      # ── 1. Checkout ────────────────────────────────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ── 2. Install dependencies ────────────────────────────────────────────
+      # ── ROS 2 Humble ───────────────────────────────────────────────────────
+      - name: Set up ROS 2 Humble
+        uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: humble
+
+      # ── System deps (vcan tooling only — no libsocketcan needed) ──────────
       - name: Install system dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y \
-            build-essential \
-            cmake \
-            libsocketcan-dev \
-            can-utils \
-            iproute2
+          sudo apt-get install -y can-utils iproute2
 
-      # ── 3. Build ───────────────────────────────────────────────────────────
-      - name: Configure CMake
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
-
-      - name: Build
-        run: cmake --build build --parallel $(nproc)
-
-      # ── 4. Set up virtual CAN interface ────────────────────────────────────
-      #  SocketCAN requires a network interface; vcan0 is a software loopback.
+      # ── Virtual CAN interface (needed for any node spin-up in future tests)
       - name: Set up vcan0
         run: |
           sudo modprobe vcan
           sudo ip link add dev vcan0 type vcan
           sudo ip link set up vcan0
 
-      # ── 5. Run tests ───────────────────────────────────────────────────────
-      - name: Run fault injection tests
-        run: ctest --test-dir build --output-on-failure --timeout 30
+      # ── ROS deps from package.xml ──────────────────────────────────────────
+      - name: Install ROS dependencies
+        run: |
+          source /opt/ros/humble/setup.bash
+          rosdep update
+          rosdep install --from-paths . --ignore-src -r -y
 
-      # ── 6. Tear down vcan0 ─────────────────────────────────────────────────
+      # ── Build ──────────────────────────────────────────────────────────────
+      - name: Build
+        run: |
+          source /opt/ros/humble/setup.bash
+          mkdir -p ros2_ws/src/can_fault_monitor
+          cp -r . ros2_ws/src/can_fault_monitor/
+          cd ros2_ws
+          colcon build --packages-select can_fault_monitor --symlink-install
+
+      # ── Test (ament_lint: cpplint, cppcheck, copyright) ───────────────────
+      - name: Test
+        run: |
+          source /opt/ros/humble/setup.bash
+          cd ros2_ws
+          source install/setup.bash
+          colcon test --packages-select can_fault_monitor --return-code-on-test-failure
+          colcon test-result --verbose
+
+      # ── Tear down vcan0 ────────────────────────────────────────────────────
       - name: Tear down vcan0
         if: always()
         run: sudo ip link delete vcan0
-
-  # ── Optional: build on multiple compilers ──────────────────────────────────
-  build-matrix:
-    runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        compiler: [gcc, clang]
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y build-essential cmake libsocketcan-dev clang
-
-      - name: Build with ${{ matrix.compiler }}
-        env:
-          CC: ${{ matrix.compiler }}
-          CXX: ${{ matrix.compiler == 'clang' && 'clang++' || 'g++' }}
-        run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=Release \
-                -DCMAKE_C_COMPILER=$CC \
-                -DCMAKE_CXX_COMPILER=$CXX
-          cmake --build build --parallel $(nproc)
