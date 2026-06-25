@@ -20,19 +20,6 @@ jobs:
         with:
           required-ros-distributions: humble
 
-      # ── System deps (vcan tooling only — no libsocketcan needed) ──────────
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y can-utils iproute2
-
-      # ── Virtual CAN interface (needed for any node spin-up in future tests)
-      - name: Set up vcan0
-        run: |
-          sudo modprobe vcan
-          sudo ip link add dev vcan0 type vcan
-          sudo ip link set up vcan0
-
       # ── ROS deps from package.xml ──────────────────────────────────────────
       - name: Install ROS dependencies
         run: |
@@ -57,8 +44,3 @@ jobs:
           source install/setup.bash
           colcon test --packages-select can_fault_monitor --return-code-on-test-failure
           colcon test-result --verbose
-
-      # ── Tear down vcan0 ────────────────────────────────────────────────────
-      - name: Tear down vcan0
-        if: always()
-        run: sudo ip link delete vcan0
