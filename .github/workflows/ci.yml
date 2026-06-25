@@ -31,16 +31,16 @@ jobs:
       - name: Build
         run: |
           source /opt/ros/humble/setup.bash
-          mkdir -p ros2_ws/src/can_fault_monitor
-          cp -r . ros2_ws/src/can_fault_monitor/
-          cd ros2_ws
+          mkdir -p $HOME/ros2_ws/src
+          ln -s ${{ github.workspace }} $HOME/ros2_ws/src/can_fault_monitor
+          cd $HOME/ros2_ws
           colcon build --packages-select can_fault_monitor --symlink-install
 
       # ── Test (ament_lint: cpplint, cppcheck, copyright) ───────────────────
       - name: Test
         run: |
           source /opt/ros/humble/setup.bash
-          cd ros2_ws
+          cd $HOME/ros2_ws
           source install/setup.bash
           colcon test --packages-select can_fault_monitor --return-code-on-test-failure
           colcon test-result --verbose
